@@ -461,8 +461,8 @@ const App: React.FC = () => {
       <nav className="fixed top-0 w-full z-[100] p-4 md:p-6">
         <motion.div style={{ opacity }} className="max-w-7xl mx-auto glass rounded-[2rem] p-3 md:p-4 flex items-center justify-between border-white/10 shadow-2xl">
           <div onClick={handleLogoClick} className="flex items-center gap-3 md:gap-4 group cursor-pointer pl-2 select-none">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-emerald-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all group-hover:scale-105">
-              <span className="font-black text-lg md:text-xl">ST</span>
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all group-hover:scale-105 overflow-hidden border border-white/10 bg-[#020617]">
+              <img src="/favicon.svg" alt="ST Logo" className="w-full h-full object-cover" />
             </div>
             <div className="block">
               <h1 className="text-base md:text-lg font-black tracking-tight leading-none mb-1">{profile.name || "الاسم"}</h1>
@@ -1064,17 +1064,17 @@ const App: React.FC = () => {
           
           <div className="flex items-center gap-4">
             {profile.social.whatsapp && (
-              <a href={`https://wa.me/2${profile.social.whatsapp}`} target="_blank" className="text-slate-500 hover:text-[#25D366] transition-colors">
+              <a href={`https://wa.me/2${profile.social.whatsapp}`} target="_blank" className="text-[#25D366] hover:scale-110 transition-transform">
                 <FaWhatsapp size={24} />
               </a>
             )}
             {profile.social.linkedin && (
-              <a href={profile.social.linkedin} target="_blank" className="text-slate-500 hover:text-[#0A66C2] transition-colors">
+              <a href={profile.social.linkedin} target="_blank" className="text-[#0A66C2] hover:scale-110 transition-transform">
                 <FaLinkedin size={24} />
               </a>
             )}
             {profile.social.email && (
-              <a href={`mailto:${profile.social.email}`} className="text-slate-500 hover:text-[#EA4335] transition-colors">
+              <a href={`mailto:${profile.social.email}`} className="text-[#EA4335] hover:scale-110 transition-transform">
                 <SiGmail size={24} />
               </a>
             )}
