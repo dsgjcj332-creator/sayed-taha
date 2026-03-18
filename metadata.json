@@ -1,0 +1,7 @@
+{
+  "name": "El-Sayed Taha | Interactive Profile",
+  "description": "A high-end, dynamic, and 3D-animated personal profile and dashboard for El-Sayed Taha, featuring AI-powered skill management and immersive UI/UX.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

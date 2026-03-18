@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: portfolio
+    // Document ID: main
+    // Fields:
+    //   - name: string
+    //   - title: string
+    //   - bio: string
+    //   - profileImage: string
+    //   - galleryImages: list of strings
+    //   - aiReadinessScore: number
+    //   - skills: list of objects
+    //   - projects: list of objects
+    //   - stats: list of objects
+    //   - social: object
+    //   - roadmap: list of objects
+    //
+    // ===============================================================
+
+    // Validate string length
+    function validStringLength(field, minLen, maxLen) {
+       return request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen;
+    }
+
+    // Validate that a list is a list and enforces size limits
+    function isValidList(list, maxSize) {
+      return list is list && list.size() <= maxSize;
+    }
+
+    function isValidProfileData() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'title', 'bio', 'profileImage', 'galleryImages', 'aiReadinessScore', 'skills', 'projects', 'stats', 'social', 'roadmap']) &&
+             data.name is string && data.name.size() <= 10000 &&
+             data.title is string && data.title.size() <= 10000 &&
+             data.bio is string && data.bio.size() <= 100000 &&
+             data.profileImage is string && data.profileImage.size() <= 1048576 &&
+             isValidList(data.galleryImages, 50) &&
+             data.aiReadinessScore is number &&
+             isValidList(data.skills, 100) &&
+             isValidList(data.projects, 100) &&
+             isValidList(data.stats, 50) &&
+             data.social is map &&
+             isValidList(data.roadmap, 100);
+    }
+
+    match /portfolio/{docId} {
+      // User explicitly requested no authentication for testing
+      allow read: if true;
+      allow create, update: if isValidProfileData();
+      allow delete: if false; // Prevent accidental deletion of the main document
+    }
+  }
+}

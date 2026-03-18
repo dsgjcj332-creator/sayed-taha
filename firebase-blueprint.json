@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "ProfileData": {
+      "title": "ProfileData",
+      "description": "The main portfolio data",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "bio": { "type": "string" },
+        "profileImage": { "type": "string" },
+        "galleryImages": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "aiReadinessScore": { "type": "number" },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "level": { "type": "number" },
+              "category": { "type": "string", "enum": ["Strategy", "AI Development", "Growth", "Operations", "Other"] },
+              "description": { "type": "string" }
+            },
+            "required": ["id", "name", "level", "category"]
+          }
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "impact": { "type": "string" },
+              "tech": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "image": { "type": "string" },
+              "link": { "type": "string" }
+            },
+            "required": ["id", "title", "impact", "tech", "image"]
+          }
+        },
+        "stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "value": { "type": "string" },
+              "sub": { "type": "string" },
+              "icon": { "type": "string" },
+              "color": { "type": "string" }
+            },
+            "required": ["id", "label", "value", "sub", "icon", "color"]
+          }
+        },
+        "social": {
+          "type": "object",
+          "properties": {
+            "linkedin": { "type": "string" },
+            "twitter": { "type": "string" },
+            "github": { "type": "string" },
+            "email": { "type": "string" },
+            "website": { "type": "string" }
+          }
+        },
+        "roadmap": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "year": { "type": "string" },
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "status": { "type": "string", "enum": ["completed", "current", "upcoming"] }
+            },
+            "required": ["id", "year", "title", "description", "status"]
+          }
+        }
+      },
+      "required": ["name", "title", "bio", "profileImage", "galleryImages", "aiReadinessScore", "skills", "projects", "stats", "social", "roadmap"]
+    }
+  },
+  "firestore": {
+    "portfolio/{docId}": {
+      "schema": { "$ref": "#/entities/ProfileData" },
+      "description": "The main portfolio document"
+    }
+  }
+}
