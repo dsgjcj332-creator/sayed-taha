@@ -1,0 +1,7 @@
+node_modules
+.git
+.vscode
+.env*
+firebase-applet-config.json
+migrated_prompt_history
+dist
