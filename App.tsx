@@ -61,14 +61,56 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 const INITIAL_DATA: ProfileData = {
-  name: "",
-  title: "",
-  bio: "",
-  profileImage: "",
-  skills: [],
-  projects: [],
-  galleryImages: [],
-  stats: [],
+  name: "Sayed Taha",
+  title: "استراتيجي رقمي | مطور واجهات وتجارب AI",
+  bio: "أحوّل الأفكار إلى منتجات رقمية احترافية بتجارب ثلاثية الأبعاد، واجهات فائقة السلاسة، واستراتيجيات نمو مدعومة بالذكاء الاصطناعي. أركز على بناء حضور رقمي يلفت الانتباه ويصنع ثقة ونتائج واضحة.",
+  profileImage: "/profile.png",
+  imagePosition: { x: 50, y: 50 },
+  skills: [
+    { id: 'skill-1', name: 'تصميم تجارب 3D', level: 94, category: 'AI Development', description: 'واجهات تفاعلية، عمق بصري، وحركة دقيقة تعطي انطباعاً Premium.' },
+    { id: 'skill-2', name: 'React & Motion Systems', level: 92, category: 'AI Development', description: 'بناء مكونات سريعة، مرنة، وممتعة باستخدام React و Framer Motion.' },
+    { id: 'skill-3', name: 'استراتيجية الهوية الرقمية', level: 90, category: 'Strategy', description: 'تحويل الملف الشخصي إلى قصة مهنية واضحة وقابلة للتسويق.' },
+    { id: 'skill-4', name: 'نمو المنتجات', level: 86, category: 'Growth', description: 'صياغة رحلات تواصل وتحويل تقود الزائر نحو إجراء واضح.' },
+    { id: 'skill-5', name: 'أتمتة بالذكاء الاصطناعي', level: 88, category: 'Operations', description: 'استخدام AI لتسريع المحتوى، التحليل، وخدمة العملاء.' },
+    { id: 'skill-6', name: 'تحسين الأداء وتجربة الموبايل', level: 84, category: 'Other', description: 'واجهات خفيفة، متجاوبة، ومصممة لتبدو قوية على كل الشاشات.' }
+  ],
+  projects: [
+    {
+      id: 'project-1',
+      title: 'منصة ملف شخصي تفاعلي ثلاثي الأبعاد',
+      impact: 'حضور رقمي Premium',
+      tech: ['React', 'Framer Motion', '3D UX'],
+      image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=1200&auto=format&fit=crop',
+      link: 'https://mnmknk.com/'
+    },
+    {
+      id: 'project-2',
+      title: 'نظام هوية رقمية واستشارات نمو',
+      impact: 'وضوح أكبر للعلامة',
+      tech: ['Strategy', 'Branding', 'AI'],
+      image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1200&auto=format&fit=crop'
+    },
+    {
+      id: 'project-3',
+      title: 'لوحة عروض وقياسات احترافية',
+      impact: 'قرارات أسرع',
+      tech: ['Dashboards', 'Analytics', 'Automation'],
+      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop'
+    }
+  ],
+  galleryImages: [
+    '/profile.png',
+    'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=900&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=900&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=900&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=900&auto=format&fit=crop'
+  ],
+  stats: [
+    { id: 'stat-1', label: 'جودة التجربة', value: '99%', sub: 'تفاصيل مصممة بعناية', icon: 'Award', color: 'emerald' },
+    { id: 'stat-2', label: 'سرعة التفاعل', value: '3D+', sub: 'حركة وعمق بصري', icon: 'Rocket', color: 'blue' },
+    { id: 'stat-3', label: 'وضوح الهوية', value: '10x', sub: 'رسالة أقوى للزائر', icon: 'Target', color: 'purple' },
+    { id: 'stat-4', label: 'قنوات التواصل', value: '5+', sub: 'وصول سريع ومباشر', icon: 'Globe', color: 'cyan' }
+  ],
   social: {
     linkedin: 'https://www.linkedin.com/in/%D8%A7%D9%84%D8%B3%D9%8A%D8%AF-%D8%B7%D9%87-878906352?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app',
     twitter: '',
@@ -77,8 +119,12 @@ const INITIAL_DATA: ProfileData = {
     whatsapp: '01067461059',
     appLink: 'https://mnmknk.com/'
   },
-  aiReadinessScore: 0,
-  roadmap: []
+  aiReadinessScore: 96,
+  roadmap: [
+    { id: 'road-1', year: '2025', title: 'إطلاق الهوية الرقمية', description: 'بناء حضور احترافي يعرض المهارات والمشاريع بطريقة تفاعلية واضحة.', status: 'completed' },
+    { id: 'road-2', year: '2026', title: 'تجارب 3D وذكاء اصطناعي', description: 'إضافة طبقات حركة، معرض ثلاثي الأبعاد، ورسائل تسويقية أكثر تأثيراً.', status: 'current' },
+    { id: 'road-3', year: 'Next', title: 'منتجات رقمية قابلة للتوسع', description: 'تحويل الخبرة إلى حلول ومنتجات رقمية تخدم العملاء وتزيد فرص النمو.', status: 'upcoming' }
+  ]
 };
 
 const IconMap: Record<string, any> = {
@@ -111,7 +157,9 @@ const StatCard: React.FC<{ icon: any, label: string, value: string, sub: string,
 
 const Gallery3D: React.FC<{ images: string[] }> = ({ images }) => {
   const [index, setIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const rotate = useMotionValue(0);
+  const springRotate = useSpring(rotate, { stiffness: 200, damping: 25 });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -120,9 +168,6 @@ const Gallery3D: React.FC<{ images: string[] }> = ({ images }) => {
   }, []);
 
   if (!images || images.length === 0) return null;
-
-  const rotate = useMotionValue(0);
-  const springRotate = useSpring(rotate, { stiffness: 200, damping: 25 });
 
   const next = () => {
     setIndex((prev) => (prev + 1) % images.length);
@@ -245,6 +290,101 @@ const Roadmap: React.FC<{ items: ProfileData['roadmap'] }> = ({ items }) => (
           </motion.div>
         ))}
       </div>
+    </div>
+  </section>
+);
+
+
+const orbitBadges = [
+  { label: 'AI', icon: Sparkles, className: 'top-2 left-8 text-emerald-300' },
+  { label: '3D', icon: Move, className: 'top-20 -right-4 text-blue-300' },
+  { label: 'UX', icon: Zap, className: 'bottom-20 -left-5 text-purple-300' },
+  { label: 'GO', icon: Rocket, className: 'bottom-4 right-10 text-cyan-300' }
+];
+
+const HeroHologram: React.FC<{ profile: ProfileData }> = ({ profile }) => (
+  <div className="relative flex justify-center order-1 lg:order-2 perspective-container min-h-[420px] md:min-h-[560px]">
+    <motion.div
+      animate={{ rotateY: [-10, 10, -10], rotateX: [2, -4, 2], y: [0, -18, 0] }}
+      transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      className="relative w-full max-w-[360px] md:max-w-[520px] aspect-square preserve-3d"
+    >
+      <div className="absolute inset-[-16%] rounded-full bg-[conic-gradient(from_180deg,rgba(16,185,129,0),rgba(16,185,129,.45),rgba(59,130,246,.35),rgba(139,92,246,.35),rgba(16,185,129,0))] blur-3xl opacity-70 animate-spin-slow" />
+      <div className="absolute inset-0 rounded-full border border-emerald-400/20 hologram-ring" />
+      <div className="absolute inset-[8%] rounded-full border border-blue-400/20 hologram-ring hologram-ring-delay" />
+      <div className="absolute inset-[16%] rounded-full border border-purple-400/20 hologram-ring hologram-ring-slow" />
+
+      {orbitBadges.map((badge, i) => (
+        <motion.div
+          key={badge.label}
+          animate={{ y: [0, i % 2 ? 14 : -14, 0], rotate: [0, i % 2 ? -6 : 6, 0] }}
+          transition={{ duration: 4 + i, repeat: Infinity, ease: 'easeInOut' }}
+          className={`absolute z-20 ${badge.className}`}
+        >
+          <div className="glass px-4 py-3 rounded-2xl border-white/15 shadow-2xl flex items-center gap-2 backdrop-blur-2xl">
+            <badge.icon size={18} />
+            <span className="text-xs font-black tracking-[0.25em]">{badge.label}</span>
+          </div>
+        </motion.div>
+      ))}
+
+      <div className="absolute inset-[12%] premium-card-3d glass rounded-[3rem] md:rounded-[4.5rem] border-2 border-white/10 overflow-hidden p-3 shadow-2xl">
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,.18),transparent)] translate-x-[-120%] animate-scan" />
+        {profile.profileImage ? (
+          <img
+            src={profile.profileImage}
+            alt={profile.name || 'Profile'}
+            className="relative z-10 w-full h-full object-cover rounded-[2.4rem] md:rounded-[4rem] bg-slate-900 saturate-125 contrast-110"
+            style={{ objectPosition: `${profile.imagePosition?.x ?? 50}% ${profile.imagePosition?.y ?? 50}%` }}
+          />
+        ) : (
+          <div className="relative z-10 w-full h-full rounded-[2.4rem] md:rounded-[4rem] bg-slate-800 flex items-center justify-center">
+            <ImageIcon size={64} className="text-slate-600" />
+          </div>
+        )}
+        <div className="absolute inset-3 z-20 rounded-[2.4rem] md:rounded-[4rem] bg-gradient-to-t from-[#020617]/80 via-transparent to-white/10 pointer-events-none" />
+        <div className="absolute bottom-8 left-8 right-8 z-30 glass rounded-3xl p-5 border-white/15">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[10px] text-emerald-300 font-black tracking-[0.28em] uppercase">Digital Identity Core</p>
+              <h3 className="text-2xl font-black mt-1">{profile.aiReadinessScore || 96}% جاهزية AI</h3>
+            </div>
+            <div className="w-14 h-14 rounded-2xl bg-emerald-400/15 border border-emerald-300/30 grid place-items-center text-emerald-300 shadow-lg shadow-emerald-500/20">
+              <Sparkles size={28} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  </div>
+);
+
+const ExperienceRibbon: React.FC = () => (
+  <section className="relative overflow-hidden rounded-[2.5rem] md:rounded-[4rem] glass border-white/10 p-8 md:p-12 shadow-2xl">
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,.18),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,.18),transparent_32%)]" />
+    <div className="relative grid md:grid-cols-3 gap-6 md:gap-8">
+      {[
+        { title: 'واجهة سينمائية', desc: 'عمق بصري، زجاج تفاعلي، وحركة دقيقة تشبه منتجات الشركات العالمية.', icon: Star },
+        { title: 'تواصل سريع', desc: 'أزرار واضحة تقود الزائر مباشرة إلى واتساب، لينكدإن، البريد أو التطبيق.', icon: MessageCircle },
+        { title: 'هوية قابلة للتطوير', desc: 'بيانات ومشاريع ومهارات قابلة للتعديل من غرفة قيادة داخلية.', icon: ShieldCheck }
+      ].map((item, i) => (
+        <motion.div
+          key={item.title}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.12 }}
+          whileHover={{ y: -10, rotateX: 4, rotateY: i === 1 ? 0 : i === 0 ? -4 : 4 }}
+          className="relative glass p-7 rounded-[2rem] border-white/10 overflow-hidden group preserve-3d"
+        >
+          <div className="absolute -top-16 -left-16 w-32 h-32 rounded-full bg-emerald-400/10 blur-3xl group-hover:bg-emerald-400/20 transition-all" />
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 grid place-items-center mb-6 text-emerald-300 group-hover:scale-110 group-hover:rotate-6 transition-all">
+            <item.icon size={28} />
+          </div>
+          <h3 className="text-2xl font-black mb-3">{item.title}</h3>
+          <p className="text-slate-400 leading-relaxed text-sm md:text-base">{item.desc}</p>
+        </motion.div>
+      ))}
     </div>
   </section>
 );
@@ -556,29 +696,11 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="relative flex justify-center order-1 lg:order-2">
-                  <motion.div 
-                    animate={{ y: [0, -20, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="relative w-full max-w-[320px] md:max-w-[480px] aspect-square group"
-                  >
-                    <div className="absolute inset-0 bg-emerald-500/30 blur-[120px] rounded-full group-hover:bg-emerald-500/40 transition-all duration-700" />
-                    <div className="relative w-full h-full glass rounded-[3rem] md:rounded-[4.5rem] border-2 border-white/10 overflow-hidden p-3 shadow-2xl">
-                      {profile.profileImage ? (
-                        <img 
-                          src={profile.profileImage} 
-                          className="w-full h-full object-cover rounded-[2.5rem] md:rounded-[4rem] bg-slate-900" 
-                          style={{ objectPosition: `${profile.imagePosition?.x ?? 50}% ${profile.imagePosition?.y ?? 50}%` }}
-                        />
-                      ) : (
-                        <div className="w-full h-full rounded-[2.5rem] md:rounded-[4rem] bg-slate-800 flex items-center justify-center">
-                          <ImageIcon size={64} className="text-slate-600" />
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                </div>
+                <HeroHologram profile={profile} />
+
               </section>
+
+              <ExperienceRibbon />
 
               {/* Enhanced KPI Section */}
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">

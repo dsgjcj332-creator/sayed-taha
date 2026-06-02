@@ -81,6 +81,40 @@
       .perspective-container {
         perspective: 2000px;
       }
+      .preserve-3d {
+        transform-style: preserve-3d;
+      }
+      .premium-card-3d {
+        transform: translateZ(60px);
+        box-shadow: 0 40px 120px rgba(16, 185, 129, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      }
+      .hologram-ring {
+        transform: rotateX(68deg) translateZ(-20px);
+        box-shadow: 0 0 60px rgba(16, 185, 129, 0.25), inset 0 0 40px rgba(59, 130, 246, 0.12);
+        animation: orbitPulse 5s ease-in-out infinite;
+      }
+      .hologram-ring-delay {
+        animation-delay: -1.4s;
+        transform: rotateX(72deg) rotateZ(18deg) translateZ(8px);
+      }
+      .hologram-ring-slow {
+        animation-duration: 7s;
+        transform: rotateX(64deg) rotateZ(-28deg) translateZ(26px);
+      }
+      .animate-spin-slow {
+        animation: spin 16s linear infinite;
+      }
+      .animate-scan {
+        animation: scan 4.5s ease-in-out infinite;
+      }
+      @keyframes orbitPulse {
+        0%, 100% { opacity: .35; filter: blur(0); }
+        50% { opacity: .9; filter: blur(.6px); }
+      }
+      @keyframes scan {
+        0%, 35% { transform: translateX(-140%) skewX(-18deg); }
+        70%, 100% { transform: translateX(140%) skewX(-18deg); }
+      }
       .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
       }
