@@ -1,18 +1,19 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useReducedMotion } from 'framer-motion';
 import { 
   Briefcase, Settings, Plus, Trash2, Sparkles, Linkedin, Mail, 
   Edit3, Eye, MessageSquare, ChevronRight, TrendingUp, Target, 
   Rocket, Star, ArrowUpRight, Globe, Zap, Lightbulb, Users, BarChart3,
   ShieldCheck, Award, Image as ImageIcon, Link as LinkIcon, Camera, Maximize2, Menu, X, Move, MessageCircle, Smartphone
 } from 'lucide-react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { FaWhatsapp, FaLinkedin, FaGlobe, FaMobileAlt } from 'react-icons/fa';
 import { SiGmail } from 'react-icons/si';
 import { Skill, ProfileData, AppMode, Project, Stat } from './types';
-import { doc, onSnapshot, setDoc, getDocFromServer } from 'firebase/firestore';
-import { db } from './firebase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db, isFirebaseConfigured } from './firebase';
+
+const SkillRadar = lazy(() => import('./SkillRadar'));
 
 enum OperationType {
   CREATE = 'create',
@@ -133,9 +134,65 @@ const IconMap: Record<string, any> = {
 
 const CATEGORIES: (Skill['category'] | 'الكل')[] = ['الكل', 'Strategy', 'AI Development', 'Growth', 'Operations', 'Other'];
 
-const StatCard: React.FC<{ icon: any, label: string, value: string, sub: string, color: string }> = ({ icon: Icon, label, value, sub, color }) => (
+const scheduleIdleTask = (callback: () => void) => {
+  if (typeof window === 'undefined') {
+    callback();
+    return () => undefined;
+  }
+
+  const requestIdle = window.requestIdleCallback || ((handler: IdleRequestCallback) => window.setTimeout(() => handler({ didTimeout: false, timeRemaining: () => 1 }), 1));
+  const cancelIdle = window.cancelIdleCallback || window.clearTimeout;
+  const id = requestIdle(callback, { timeout: 1600 });
+
+  return () => cancelIdle(id as number);
+};
+
+const getDevicePerformanceSignals = () => {
+  if (typeof window === 'undefined') return false;
+
+  const nav = navigator as Navigator & {
+    deviceMemory?: number;
+    connection?: EventTarget & { saveData?: boolean; effectiveType?: string };
+  };
+  const lowMemory = typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4;
+  const lowCpu = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4;
+  const saveData = Boolean(nav.connection?.saveData);
+  const slowNetwork = Boolean(nav.connection?.effectiveType && ['slow-2g', '2g', '3g'].includes(nav.connection.effectiveType));
+  const smallScreen = window.matchMedia('(max-width: 767px)').matches;
+
+  return saveData || slowNetwork || ((lowMemory || lowCpu) && smallScreen);
+};
+
+const useLiteExperience = (prefersReducedMotion: boolean | null) => {
+  const [isLite, setIsLite] = useState(() => Boolean(prefersReducedMotion || getDevicePerformanceSignals()));
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const nav = navigator as Navigator & {
+      connection?: EventTarget & { saveData?: boolean; effectiveType?: string };
+    };
+
+    const update = () => {
+      setIsLite(Boolean(prefersReducedMotion || getDevicePerformanceSignals()));
+    };
+
+    update();
+    window.addEventListener('resize', update, { passive: true });
+    nav.connection?.addEventListener?.('change', update);
+
+    return () => {
+      window.removeEventListener('resize', update);
+      nav.connection?.removeEventListener?.('change', update);
+    };
+  }, [prefersReducedMotion]);
+
+  return isLite;
+};
+
+const StatCard: React.FC<{ icon: any, label: string, value: string, sub: string, color: string, isLite?: boolean }> = ({ icon: Icon, label, value, sub, color, isLite = false }) => (
   <motion.div 
-    whileHover={{ y: -8, scale: 1.02 }}
+    whileHover={isLite ? undefined : { y: -8, scale: 1.02 }}
     className="glass p-6 md:p-8 rounded-[2rem] border border-white/10 relative overflow-hidden group shadow-xl"
   >
     <div className={`absolute -top-10 -right-10 w-32 h-32 blur-[80px] opacity-30 bg-${color}-500 transition-all group-hover:opacity-50`} />
@@ -155,7 +212,7 @@ const StatCard: React.FC<{ icon: any, label: string, value: string, sub: string,
   </motion.div>
 );
 
-const Gallery3D: React.FC<{ images: string[] }> = ({ images }) => {
+const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, isLite = false }) => {
   const [index, setIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const rotate = useMotionValue(0);
@@ -179,9 +236,32 @@ const Gallery3D: React.FC<{ images: string[] }> = ({ images }) => {
     rotate.set(rotate.get() + (360 / images.length));
   };
 
-  const radius = isMobile ? 280 : 450;
-  const cardWidth = isMobile ? "180px" : "280px";
-  const cardHeight = isMobile ? "240px" : "380px";
+  const radius = isMobile ? 220 : 450;
+  const cardWidth = isMobile ? "170px" : "280px";
+  const cardHeight = isMobile ? "230px" : "380px";
+
+  if (isLite) {
+    return (
+      <section className="py-16 md:py-24 space-y-10 content-section">
+        <div className="text-center px-4 space-y-4">
+          <h3 className="text-4xl md:text-6xl font-black">معرض الرؤية الاستراتيجية</h3>
+          <p className="text-slate-500 max-w-2xl mx-auto text-lg">نسخة خفيفة تعرض الصور مباشرة بسرعة أعلى على الأجهزة الضعيفة.</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {images.slice(0, 4).map((img, i) => (
+            <img
+              key={`${img}-${i}`}
+              src={img}
+              alt={`صورة من المعرض ${i + 1}`}
+              loading="lazy"
+              decoding="async"
+              className="aspect-[4/5] w-full rounded-[1.5rem] object-cover border border-white/10 bg-slate-900"
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-24 md:py-32 space-y-16 overflow-hidden">
@@ -222,7 +302,7 @@ const Gallery3D: React.FC<{ images: string[] }> = ({ images }) => {
                 }}
                 className="glass rounded-[2rem] overflow-hidden border-2 border-white/10 group cursor-pointer shadow-2xl"
               >
-                <img src={img || null} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-115" />
+                <img src={img} alt={`صورة من المعرض ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-115" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-6">
                    <button className="w-full py-3 glass rounded-xl text-xs font-bold flex items-center justify-center gap-2 border-white/20">
                      <Maximize2 size={16} /> تكبير الرؤية
@@ -302,19 +382,23 @@ const orbitBadges = [
   { label: 'GO', icon: Rocket, className: 'bottom-4 right-10 text-cyan-300' }
 ];
 
-const HeroHologram: React.FC<{ profile: ProfileData }> = ({ profile }) => (
+const HeroHologram: React.FC<{ profile: ProfileData, isLite?: boolean }> = ({ profile, isLite = false }) => (
   <div className="relative flex justify-center order-1 lg:order-2 perspective-container min-h-[420px] md:min-h-[560px]">
     <motion.div
-      animate={{ rotateY: [-10, 10, -10], rotateX: [2, -4, 2], y: [0, -18, 0] }}
-      transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      animate={isLite ? undefined : { rotateY: [-10, 10, -10], rotateX: [2, -4, 2], y: [0, -18, 0] }}
+      transition={isLite ? undefined : { duration: 9, repeat: Infinity, ease: 'easeInOut' }}
       className="relative w-full max-w-[360px] md:max-w-[520px] aspect-square preserve-3d"
     >
-      <div className="absolute inset-[-16%] rounded-full bg-[conic-gradient(from_180deg,rgba(16,185,129,0),rgba(16,185,129,.45),rgba(59,130,246,.35),rgba(139,92,246,.35),rgba(16,185,129,0))] blur-3xl opacity-70 animate-spin-slow" />
-      <div className="absolute inset-0 rounded-full border border-emerald-400/20 hologram-ring" />
-      <div className="absolute inset-[8%] rounded-full border border-blue-400/20 hologram-ring hologram-ring-delay" />
-      <div className="absolute inset-[16%] rounded-full border border-purple-400/20 hologram-ring hologram-ring-slow" />
+      <div className={`${isLite ? 'hidden' : 'absolute'} inset-[-16%] rounded-full bg-[conic-gradient(from_180deg,rgba(16,185,129,0),rgba(16,185,129,.45),rgba(59,130,246,.35),rgba(139,92,246,.35),rgba(16,185,129,0))] blur-3xl opacity-70 animate-spin-slow`} />
+      {!isLite && (
+        <>
+          <div className="absolute inset-0 rounded-full border border-emerald-400/20 hologram-ring" />
+          <div className="absolute inset-[8%] rounded-full border border-blue-400/20 hologram-ring hologram-ring-delay" />
+          <div className="absolute inset-[16%] rounded-full border border-purple-400/20 hologram-ring hologram-ring-slow" />
+        </>
+      )}
 
-      {orbitBadges.map((badge, i) => (
+      {!isLite && orbitBadges.map((badge, i) => (
         <motion.div
           key={badge.label}
           animate={{ y: [0, i % 2 ? 14 : -14, 0], rotate: [0, i % 2 ? -6 : 6, 0] }}
@@ -334,6 +418,9 @@ const HeroHologram: React.FC<{ profile: ProfileData }> = ({ profile }) => (
           <img
             src={profile.profileImage}
             alt={profile.name || 'Profile'}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
             className="relative z-10 w-full h-full object-cover rounded-[2.4rem] md:rounded-[4rem] bg-slate-900 saturate-125 contrast-110"
             style={{ objectPosition: `${profile.imagePosition?.x ?? 50}% ${profile.imagePosition?.y ?? 50}%` }}
           />
@@ -400,6 +487,8 @@ const App: React.FC = () => {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
+  const prefersReducedMotion = useReducedMotion();
+  const isLiteExperience = useLiteExperience(prefersReducedMotion);
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.05], [1, 0.9]);
 
@@ -433,40 +522,42 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    async function testConnection() {
-      try {
-        await getDocFromServer(doc(db, 'portfolio', 'connection_test'));
-      } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration. ");
-        }
-      }
-    }
-    testConnection();
-
-    const unsub = onSnapshot(doc(db, 'portfolio', 'main'), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as ProfileData;
-        setProfile({
-          ...INITIAL_DATA,
-          ...data,
-          skills: data.skills || INITIAL_DATA.skills,
-          projects: data.projects || INITIAL_DATA.projects,
-          galleryImages: data.galleryImages || INITIAL_DATA.galleryImages,
-          stats: data.stats || INITIAL_DATA.stats,
-          roadmap: data.roadmap || INITIAL_DATA.roadmap,
-          social: { ...INITIAL_DATA.social, ...(data.social || {}) }
-        });
-      }
+    if (!isFirebaseConfigured) {
       setIsLoaded(true);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'portfolio/main');
+      return;
+    }
+
+    let unsubscribe: (() => void) | undefined;
+    const cancelIdle = scheduleIdleTask(() => {
+      unsubscribe = onSnapshot(doc(db, 'portfolio', 'main'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as ProfileData;
+          setProfile({
+            ...INITIAL_DATA,
+            ...data,
+            skills: data.skills || INITIAL_DATA.skills,
+            projects: data.projects || INITIAL_DATA.projects,
+            galleryImages: data.galleryImages || INITIAL_DATA.galleryImages,
+            stats: data.stats || INITIAL_DATA.stats,
+            roadmap: data.roadmap || INITIAL_DATA.roadmap,
+            social: { ...INITIAL_DATA.social, ...(data.social || {}) }
+          });
+        }
+        setIsLoaded(true);
+      }, (error) => {
+        console.error('Firestore Error: ', error);
+        setIsLoaded(true);
+      });
     });
-    return () => unsub();
+
+    return () => {
+      cancelIdle();
+      unsubscribe?.();
+    };
   }, []);
 
   useEffect(() => {
-    if (isLoaded && mode === AppMode.EDIT) {
+    if (isLoaded && mode === AppMode.EDIT && isFirebaseConfigured) {
       const saveToFirestore = async () => {
         try {
           await setDoc(doc(db, 'portfolio', 'main'), profile);
@@ -696,7 +787,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <HeroHologram profile={profile} />
+                <HeroHologram profile={profile} isLite={isLiteExperience} />
 
               </section>
 
@@ -711,13 +802,14 @@ const App: React.FC = () => {
                     label={stat.label} 
                     value={stat.value} 
                     sub={stat.sub} 
-                    color={stat.color} 
+                    color={stat.color}
+                    isLite={isLiteExperience}
                   />
                 ))}
               </section>
 
               {/* 3D Dynamic Gallery */}
-              <Gallery3D images={profile.galleryImages} />
+              <Gallery3D images={profile.galleryImages} isLite={isLiteExperience} />
 
               {/* Capability Matrix Section */}
               <section className="space-y-20">
@@ -729,13 +821,25 @@ const App: React.FC = () => {
                 <div className="grid lg:grid-cols-3 gap-12 md:gap-16 items-start">
                   <div className="lg:col-span-1 glass p-8 md:p-12 rounded-[3rem] border border-white/10 shadow-2xl order-2 lg:order-1">
                     <div className="aspect-square w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={profile.skills}>
-                          <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                          <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} />
-                          <Radar dataKey="level" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
-                        </RadarChart>
-                      </ResponsiveContainer>
+                      {isLiteExperience ? (
+                        <div className="h-full flex flex-col justify-center gap-4">
+                          {profile.skills.slice(0, 6).map(skill => (
+                            <div key={skill.id} className="space-y-2">
+                              <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                                <span>{skill.name}</span>
+                                <span>{skill.level}%</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-slate-900 overflow-hidden">
+                                <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-600" style={{ width: `${skill.level}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <Suspense fallback={<div className="h-full rounded-[2rem] bg-slate-900/70 animate-pulse" />}>
+                          <SkillRadar skills={profile.skills} />
+                        </Suspense>
+                      )}
                     </div>
                   </div>
                   
@@ -793,11 +897,11 @@ const App: React.FC = () => {
                   {profile.projects.map(proj => (
                     <motion.div 
                       key={proj.id} 
-                      whileHover={{ y: -12 }}
+                      whileHover={isLiteExperience ? undefined : { y: -12 }}
                       className="glass rounded-[3rem] overflow-hidden border-white/5 group shadow-2xl relative"
                     >
                       <div className="aspect-[16/10] overflow-hidden relative">
-                        <img src={proj.image || null} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                        <img src={proj.image} alt={proj.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-90" />
                         <div className="absolute bottom-8 left-8 right-8">
                            <div className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-3 bg-emerald-400/10 px-3 py-1 rounded-full w-fit backdrop-blur-md">{proj.impact}</div>
@@ -917,6 +1021,8 @@ const App: React.FC = () => {
                             <img 
                               src={profile.profileImage} 
                               alt="Profile Preview" 
+                              loading="lazy"
+                              decoding="async"
                               className="w-16 h-16 rounded-2xl object-cover bg-slate-900 border border-white/10" 
                               style={{ objectPosition: `${profile.imagePosition?.x ?? 50}% ${profile.imagePosition?.y ?? 50}%` }}
                             />
@@ -1029,7 +1135,7 @@ const App: React.FC = () => {
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                        {profile.galleryImages.map((img, i) => (
                          <div key={i} className="relative group aspect-square rounded-2xl overflow-hidden glass border-white/10">
-                           <img src={img || null} className="w-full h-full object-cover" />
+                           <img src={img} alt={`صورة معرض ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                            <button onClick={() => removeGalleryImage(i)} className="absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white"><Trash2 size={24} /></button>
                          </div>
                        ))}

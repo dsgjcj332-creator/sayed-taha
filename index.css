@@ -1,0 +1,43 @@
+/* Performance-first enhancements loaded locally by Vite. */
+html {
+  text-rendering: optimizeLegibility;
+}
+
+img {
+  content-visibility: auto;
+}
+
+.content-section,
+section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .glass {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  .premium-card-3d {
+    transform: none !important;
+    box-shadow: 0 24px 60px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  }
+
+  .hologram-ring,
+  .animate-spin-slow,
+  .animate-scan {
+    animation: none !important;
+  }
+}
