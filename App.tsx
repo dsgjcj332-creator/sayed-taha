@@ -1,11 +1,11 @@
-
 import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useReducedMotion } from 'framer-motion';
 import { 
   Briefcase, Settings, Plus, Trash2, Sparkles, Linkedin, Mail, 
   Edit3, Eye, MessageSquare, ChevronRight, TrendingUp, Target, 
   Rocket, Star, ArrowUpRight, Globe, Zap, Lightbulb, Users, BarChart3,
-  ShieldCheck, Award, Image as ImageIcon, Link as LinkIcon, Camera, Maximize2, Menu, X, Move, MessageCircle, Smartphone
+  ShieldCheck, Award, Image as ImageIcon, Link as LinkIcon, Camera, Maximize2, Menu, X, Move, MessageCircle, Smartphone,
+  Sun, Moon, Languages
 } from 'lucide-react';
 import { FaWhatsapp, FaLinkedin, FaGlobe, FaMobileAlt } from 'react-icons/fa';
 import { SiGmail } from 'react-icons/si';
@@ -14,6 +14,104 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 
 const SkillRadar = lazy(() => import('./SkillRadar'));
+
+// --- Translations ---
+type Lang = 'ar' | 'en';
+type Theme = 'dark' | 'light';
+
+const T: Record<string, Record<Lang, string>> = {
+  available: { ar: 'متاح للاستشارات والنمو الاستراتيجي', en: 'Available for consulting & strategic growth' },
+  makesFuture: { ar: 'يصنع', en: 'shapes the' },
+  future: { ar: 'المستقبل', en: 'future' },
+  contactNow: { ar: 'تواصل الآن', en: 'Contact now' },
+  bioPlaceholder: { ar: 'نبذة تعريفية...', en: 'Brief bio...' },
+  namePlaceholder: { ar: 'الاسم', en: 'Name' },
+  titlePlaceholder: { ar: 'المسمى الوظيفي', en: 'Job title' },
+  strategicMatrix: { ar: 'مصفوفة القدرات الاستراتيجية', en: 'Strategic Capability Matrix' },
+  strategicEfficiency: { ar: 'الكفاءة الاستراتيجية', en: 'Strategic Efficiency' },
+  successStories: { ar: 'قصص النجاح الاستراتيجي', en: 'Strategic Success Stories' },
+  successDesc: { ar: 'تحويل البيانات والرؤى المجردة إلى نتائج ملموسة وأرقام حقيقية تنبض بالنمو.', en: 'Turning data and abstract insights into tangible results and real numbers pulsing with growth.' },
+  browseArchive: { ar: 'تصفح الأرشيف الكامل', en: 'Browse full archive' },
+  roiAnalysis: { ar: 'تحليل العائد الاستثماري', en: 'ROI Analysis' },
+  galleryTitle: { ar: 'معرض الرؤية الاستراتيجية', en: 'Strategic Vision Gallery' },
+  galleryDesc: { ar: 'لحظات من العمل، الإلهام، والتطوير الريادي في بيئة ثلاثية الأبعاد تفاعلية.', en: 'Moments of work, inspiration, and entrepreneurial development in an interactive 3D environment.' },
+  enlargeView: { ar: 'تكبير الرؤية', en: 'Enlarge view' },
+  roadmapTitle: { ar: 'خارطة الطريق المستقبلية', en: 'Future Roadmap' },
+  roadmapDesc: { ar: 'رؤية واضحة للنمو، الابتكار، والريادة في عالم الذكاء الاصطناعي.', en: 'A clear vision for growth, innovation, and leadership in the AI world.' },
+  completed: { ar: 'مكتمل', en: 'Completed' },
+  inProgress: { ar: 'قيد التنفيذ', en: 'In Progress' },
+  planned: { ar: 'مخطط له', en: 'Planned' },
+  commandRoom: { ar: 'غرفة القيادة', en: 'Command Room' },
+  commandDesc: { ar: 'التحكم الكامل في الهوية الرقمية والاستراتيجية.', en: 'Full control over your digital identity & strategy.' },
+  resetData: { ar: 'إعادة تعيين', en: 'Reset' },
+  clearData: { ar: 'تصفير البيانات', en: 'Clear data' },
+  profileTab: { ar: 'الملف الشخصي', en: 'Profile' },
+  skillsTab: { ar: 'المهارات', en: 'Skills' },
+  projectsTab: { ar: 'المشاريع', en: 'Projects' },
+  galleryTab: { ar: 'المعرض', en: 'Gallery' },
+  statsTab: { ar: 'الإحصائيات', en: 'Stats' },
+  roadmapTab: { ar: 'خارطة الطريق', en: 'Roadmap' },
+  socialTab: { ar: 'التواصل', en: 'Social' },
+  profNameLabel: { ar: 'الاسم المهني', en: 'Professional Name' },
+  jobTitleLabel: { ar: 'المسمى الوظيفي', en: 'Job Title' },
+  bioLabel: { ar: 'النبذة التعريفية', en: 'Bio' },
+  profileImageLabel: { ar: 'صورة البروفايل', en: 'Profile Image' },
+  chooseImage: { ar: 'اختر صورة من الجهاز', en: 'Choose image from device' },
+  horizontalMove: { ar: 'تحريك أفقي', en: 'Horizontal' },
+  verticalMove: { ar: 'تحريك رأسي', en: 'Vertical' },
+  aiReadiness: { ar: 'مستوى الجاهزية للذكاء الاصطناعي', en: 'AI Readiness Score' },
+  manageSkills: { ar: 'إدارة المهارات', en: 'Manage Skills' },
+  addSkill: { ar: 'إضافة مهارة', en: 'Add Skill' },
+  deleteConfirm: { ar: 'حذف المهارة؟', en: 'Delete skill?' },
+  manageProjects: { ar: 'إدارة المشاريع', en: 'Manage Projects' },
+  addProject: { ar: 'إضافة مشروع', en: 'Add Project' },
+  deleteProjectConfirm: { ar: 'حذف المشروع؟', en: 'Delete project?' },
+  projectTitle: { ar: 'عنوان المشروع', en: 'Project Title' },
+  projectImpact: { ar: 'الأثر (مثال: نمو 20%)', en: 'Impact (e.g. 20% growth)' },
+  imageUrl: { ar: 'رابط الصورة', en: 'Image URL' },
+  projectLink: { ar: 'رابط المشروع', en: 'Project Link' },
+  techTags: { ar: 'التقنيات (فاصلة)', en: 'Technologies (comma)' },
+  galleryManage: { ar: 'معرض الصور', en: 'Image Gallery' },
+  addImage: { ar: 'إضافة صورة', en: 'Add Image' },
+  manageStats: { ar: 'الإحصائيات الحيوية', en: 'Live Stats' },
+  addStat: { ar: 'إضافة إحصائية', en: 'Add Stat' },
+  deleteStatConfirm: { ar: 'حذف الإحصائية؟', en: 'Delete stat?' },
+  socialLinks: { ar: 'روابط التواصل الاجتماعي', en: 'Social Links' },
+  manageRoadmap: { ar: 'خارطة الطريق', en: 'Roadmap' },
+  addGoal: { ar: 'إضافة هدف', en: 'Add Goal' },
+  yearPlaceholder: { ar: 'السنة', en: 'Year' },
+  titlePlaceholder2: { ar: 'العنوان', en: 'Title' },
+  descPlaceholder: { ar: 'الوصف', en: 'Description' },
+  finishEditing: { ar: 'إنهاء التعديل', en: 'Finish Editing' },
+  enterPassword: { ar: 'الرجاء إدخال الرقم السري للمتابعة', en: 'Please enter the password to continue' },
+  password: { ar: 'الرقم السري', en: 'Password' },
+  cancel: { ar: 'إلغاء', en: 'Cancel' },
+  login: { ar: 'دخول', en: 'Login' },
+  wrongPassword: { ar: 'كلمة المرور غير صحيحة', en: 'Incorrect password' },
+  resetConfirm: { ar: 'هل أنت متأكد من إعادة تعيين جميع البيانات إلى القيم الافتراضية؟', en: 'Are you sure you want to reset all data to defaults?' },
+  clearConfirm: { ar: 'هل أنت متأكد من مسح جميع البيانات؟', en: 'Are you sure you want to clear all data?' },
+  deleteGoalConfirm: { ar: 'هل أنت متأكد من حذف هذا الهدف؟', en: 'Are you sure you want to delete this goal?' },
+  deleteImageConfirm: { ar: 'هل أنت متأكد من حذف هذه الصورة؟', en: 'Are you sure you want to delete this image?' },
+  controlRoom: { ar: 'غرفة التحكم', en: 'Control Room' },
+  addImagePrompt: { ar: 'أدخل رابط الصورة:', en: 'Enter image URL:' },
+  strategies: { ar: 'استراتيجيات', en: 'Strategies' },
+  about: { ar: 'عن الشركة', en: 'About' },
+  contact: { ar: 'تواصل', en: 'Contact' },
+  darkMode: { ar: 'داكن', en: 'Dark' },
+  lightMode: { ar: 'فاتح', en: 'Light' },
+  arabic: { ar: 'عربي', en: 'Arabic' },
+  english: { ar: 'إنجليزي', en: 'English' },
+};
+
+function t(key: string, lang: Lang): string {
+  return T[key]?.[lang] || key;
+}
+
+// --- Theme CSS ---
+const THEMES: Record<Theme, { bg: string; text: string; card: string; border: string; slate: string }> = {
+  dark: { bg: '#020617', text: '#f8fafc', card: 'rgba(15,23,42,0.6)', border: 'rgba(255,255,255,0.08)', slate: '#94a3b8' },
+  light: { bg: '#f1f5f9', text: '#0f172a', card: 'rgba(255,255,255,0.8)', border: 'rgba(0,0,0,0.08)', slate: '#64748b' },
+};
 
 enum OperationType {
   CREATE = 'create',
@@ -212,7 +310,7 @@ const StatCard: React.FC<{ icon: any, label: string, value: string, sub: string,
   </motion.div>
 );
 
-const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, isLite = false }) => {
+const Gallery3D: React.FC<{ images: string[], isLite?: boolean; lang: Lang }> = ({ images, isLite = false, lang }) => {
   const [index, setIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const rotate = useMotionValue(0);
@@ -244,15 +342,15 @@ const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, i
     return (
       <section className="py-16 md:py-24 space-y-10 content-section">
         <div className="text-center px-4 space-y-4">
-          <h3 className="text-4xl md:text-6xl font-black">معرض الرؤية الاستراتيجية</h3>
-          <p className="text-slate-500 max-w-2xl mx-auto text-lg">نسخة خفيفة تعرض الصور مباشرة بسرعة أعلى على الأجهزة الضعيفة.</p>
+          <h3 className="text-4xl md:text-6xl font-black">{t('galleryTitle', lang)}</h3>
+          <p className="text-slate-500 max-w-2xl mx-auto text-lg">{t('galleryDesc', lang)}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {images.slice(0, 4).map((img, i) => (
             <img
               key={`${img}-${i}`}
               src={img}
-              alt={`صورة من المعرض ${i + 1}`}
+              alt={`Gallery image ${i + 1}`}
               loading="lazy"
               decoding="async"
               className="aspect-[4/5] w-full rounded-[1.5rem] object-cover border border-white/10 bg-slate-900"
@@ -271,13 +369,12 @@ const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, i
           whileInView={{ opacity: 1, y: 0 }} 
           className="text-4xl md:text-6xl font-black"
         >
-          معرض الرؤية الاستراتيجية
+          {t('galleryTitle', lang)}
         </motion.h3>
-        <p className="text-slate-500 max-w-2xl mx-auto text-lg">لحظات من العمل، الإلهام، والتطوير الريادي في بيئة ثلاثية الأبعاد تفاعلية.</p>
+        <p className="text-slate-500 max-w-2xl mx-auto text-lg">{t('galleryDesc', lang)}</p>
       </div>
 
       <div className="relative h-[450px] md:h-[600px] flex items-center justify-center perspective-container">
-        {/* FIX: Merged duplicate style properties into a single style object to resolve JSX attribute error */}
         <motion.div 
           style={{ 
             rotateY: springRotate, 
@@ -302,10 +399,10 @@ const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, i
                 }}
                 className="glass rounded-[2rem] overflow-hidden border-2 border-white/10 group cursor-pointer shadow-2xl"
               >
-                <img src={img} alt={`صورة من المعرض ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-115" />
+                <img src={img} alt={`Gallery image ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-115" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-6">
                    <button className="w-full py-3 glass rounded-xl text-xs font-bold flex items-center justify-center gap-2 border-white/20">
-                     <Maximize2 size={16} /> تكبير الرؤية
+                     <Maximize2 size={16} /> {t('enlargeView', lang)}
                    </button>
                 </div>
               </motion.div>
@@ -313,7 +410,6 @@ const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, i
           })}
         </motion.div>
 
-        {/* Floating Controls */}
         <div className="absolute bottom-4 flex gap-6 z-20">
           <button onClick={prev} className="w-16 h-16 glass rounded-full flex items-center justify-center hover:bg-emerald-500 hover:scale-110 active:scale-90 transition-all shadow-xl border-white/10">
             <ChevronRight className="rotate-180" size={28} />
@@ -327,7 +423,7 @@ const Gallery3D: React.FC<{ images: string[], isLite?: boolean }> = ({ images, i
   );
 };
 
-const Roadmap: React.FC<{ items: ProfileData['roadmap'] }> = ({ items }) => (
+const Roadmap: React.FC<{ items: ProfileData['roadmap']; lang: Lang }> = ({ items, lang }) => (
   <section className="py-24 md:py-32 space-y-16">
     <div className="text-center space-y-4">
       <motion.h3 
@@ -335,9 +431,9 @@ const Roadmap: React.FC<{ items: ProfileData['roadmap'] }> = ({ items }) => (
         whileInView={{ opacity: 1, y: 0 }} 
         className="text-4xl md:text-6xl font-black"
       >
-        خارطة الطريق المستقبلية
+        {t('roadmapTitle', lang)}
       </motion.h3>
-      <p className="text-slate-500 max-w-2xl mx-auto text-lg">رؤية واضحة للنمو، الابتكار، والريادة في عالم الذكاء الاصطناعي.</p>
+      <p className="text-slate-500 max-w-2xl mx-auto text-lg">{t('roadmapDesc', lang)}</p>
     </div>
 
     <div className="relative max-w-4xl mx-auto px-6">
@@ -360,7 +456,7 @@ const Roadmap: React.FC<{ items: ProfileData['roadmap'] }> = ({ items }) => (
               <div className={`glass p-8 rounded-[2.5rem] border-white/10 relative group hover:border-emerald-500/30 transition-all shadow-2xl ${i % 2 === 0 ? 'md:text-left' : 'md:text-right'}`}>
                 <div className="text-4xl font-black text-emerald-400/20 absolute top-4 right-8 group-hover:text-emerald-400/40 transition-all">{item.year}</div>
                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 ${item.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : item.status === 'current' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-800 text-slate-500'}`}>
-                  {item.status === 'completed' ? 'مكتمل' : item.status === 'current' ? 'قيد التنفيذ' : 'مخطط له'}
+                  {item.status === 'completed' ? t('completed', lang) : item.status === 'current' ? t('inProgress', lang) : t('planned', lang)}
                 </div>
                 <h4 className="text-2xl font-black mb-2">{item.title}</h4>
                 <p className="text-slate-400 leading-relaxed">{item.description}</p>
@@ -487,6 +583,9 @@ const App: React.FC = () => {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
+  const [theme, setTheme] = useState<Theme>('dark');
+  const [lang, setLang] = useState<Lang>('ar');
+
   const prefersReducedMotion = useReducedMotion();
   const isLiteExperience = useLiteExperience(prefersReducedMotion);
   const { scrollYProgress } = useScroll();
@@ -494,6 +593,8 @@ const App: React.FC = () => {
 
   const clickCount = useRef(0);
   const lastClickTime = useRef(0);
+
+  const curTheme = THEMES[theme];
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -517,7 +618,7 @@ const App: React.FC = () => {
       setMode(AppMode.EDIT);
       setShowAuthModal(false);
     } else {
-      setAuthError("كلمة المرور غير صحيحة");
+      setAuthError(t('wrongPassword', lang));
     }
   };
 
@@ -578,8 +679,8 @@ const App: React.FC = () => {
   const addProject = () => {
     const newProj: Project = {
       id: Date.now().toString(),
-      title: 'مشروع استراتيجي جديد',
-      impact: 'تأثير إيجابي ملحوظ',
+      title: t('projectTitle', lang),
+      impact: t('projectImpact', lang),
       tech: ['Strategy', 'AI'],
       image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=800'
     };
@@ -622,7 +723,7 @@ const App: React.FC = () => {
   const addStat = () => {
     const newStat: Stat = {
       id: Date.now().toString(),
-      label: 'إحصائية جديدة',
+      label: t('manageStats', lang),
       value: '0',
       sub: 'تفاصيل',
       icon: 'Zap',
@@ -643,14 +744,14 @@ const App: React.FC = () => {
   };
 
   const addGalleryImage = () => {
-    const url = prompt('أدخل رابط الصورة:');
+    const url = prompt(t('addImagePrompt', lang));
     if (url) {
       setProfile({ ...profile, galleryImages: [...profile.galleryImages, url] });
     }
   };
 
   const removeGalleryImage = (idx: number) => {
-    if(confirm('هل أنت متأكد من حذف هذه الصورة؟')) {
+    if(confirm(t('deleteImageConfirm', lang))) {
       setProfile({ ...profile, galleryImages: profile.galleryImages.filter((_, i) => i !== idx) });
     }
   };
@@ -659,8 +760,8 @@ const App: React.FC = () => {
     const newItem: ProfileData['roadmap'][0] = {
       id: Date.now().toString(),
       year: '202X',
-      title: 'هدف جديد',
-      description: 'وصف الهدف الاستراتيجي',
+      title: t('titlePlaceholder2', lang),
+      description: t('descPlaceholder', lang),
       status: 'upcoming'
     };
     setProfile({ ...profile, roadmap: [...profile.roadmap, newItem] });
@@ -674,34 +775,107 @@ const App: React.FC = () => {
   };
 
   const deleteRoadmapItem = (id: string) => {
-    if(confirm('هل أنت متأكد من حذف هذا الهدف؟')) {
+    if(confirm(t('deleteGoalConfirm', lang))) {
       setProfile({ ...profile, roadmap: profile.roadmap.filter(item => item.id !== id) });
     }
   };
 
   return (
-    <div className="min-h-screen relative bg-[#020617] text-slate-100 overflow-x-hidden selection:bg-emerald-500/30">
+    <div 
+      className="min-h-screen relative overflow-x-hidden selection:bg-emerald-500/30"
+      style={{ backgroundColor: curTheme.bg, color: curTheme.text }}
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+    >
+      <style>{`
+        :root {
+          --glass-bg: ${curTheme.card};
+          --glass-border: ${curTheme.border};
+          --slate-color: ${curTheme.slate};
+        }
+        .glass {
+          background: var(--glass-bg);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid var(--glass-border);
+        }
+        .gradient-text {
+          background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-size: 200% auto;
+          animation: shine 4s linear infinite;
+        }
+        @keyframes shine {
+          to { background-position: 200% center; }
+        }
+        .perspective-container {
+          perspective: 2000px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(16, 185, 129, 0.2);
+          border-radius: 10px;
+        }
+        @media (max-width: 640px) {
+          .hero-title {
+            font-size: 3rem !important;
+            line-height: 1.1 !important;
+          }
+        }
+      `}</style>
+
       {/* Immersive Background Effects */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.08),transparent_70%)]" />
+        <div className="absolute top-0 left-0 w-full h-full" style={{ background: `radial-gradient(circle at 50% 0%, rgba(16,185,129,0.08), transparent 70%)` }} />
         <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/10 blur-[150px] rounded-full animate-pulse" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] bg-emerald-600/10 blur-[150px] rounded-full" />
       </div>
 
       {/* Responsive Navbar */}
       <nav className="fixed top-0 w-full z-[100] p-4 md:p-6">
-        <motion.div style={{ opacity }} className="max-w-7xl mx-auto glass rounded-[2rem] p-3 md:p-4 flex items-center justify-between border-white/10 shadow-2xl">
+        <motion.div style={{ opacity, border: `1px solid ${curTheme.border}` }} className="max-w-7xl mx-auto glass rounded-[2rem] p-3 md:p-4 flex items-center justify-between shadow-2xl">
           <div onClick={handleLogoClick} className="flex items-center gap-3 md:gap-4 group cursor-pointer pl-2 select-none">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all group-hover:scale-105 overflow-hidden border border-white/10 bg-[#020617]">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all group-hover:scale-105 overflow-hidden border border-white/10" style={{ backgroundColor: curTheme.bg }}>
               <img src="/favicon.svg" alt="ST Logo" className="w-full h-full object-cover" />
             </div>
             <div className="block">
-              <h1 className="text-base md:text-lg font-black tracking-tight leading-none mb-1">{profile.name || "الاسم"}</h1>
-              <p className="text-[8px] md:text-[9px] text-emerald-400 font-bold uppercase tracking-[0.2em]">{profile.title || "المسمى الوظيفي"}</p>
+              <h1 className="text-base md:text-lg font-black tracking-tight leading-none mb-1">{profile.name || t('namePlaceholder', lang)}</h1>
+              <p className="text-[8px] md:text-[9px] text-emerald-400 font-bold uppercase tracking-[0.2em]">{profile.title || t('titlePlaceholder', lang)}</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2 md:gap-4">
+            {/* Language Toggle */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+              className="p-2.5 md:p-3 rounded-2xl transition-all flex items-center gap-1.5 text-xs font-bold shadow-lg"
+              style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)' }}
+              title={lang === 'ar' ? 'English' : 'العربية'}
+            >
+              <Languages size={16} />
+              <span className="hidden md:inline">{lang === 'ar' ? 'EN' : 'AR'}</span>
+            </motion.button>
+
+            {/* Theme Toggle */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2.5 md:p-3 rounded-2xl transition-all flex items-center gap-1.5 text-xs font-bold shadow-lg"
+              style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: curTheme.text, border: `1px solid ${curTheme.border}` }}
+              title={theme === 'dark' ? t('lightMode', lang) : t('darkMode', lang)}
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              <span className="hidden md:inline">{theme === 'dark' ? t('lightMode', lang) : t('darkMode', lang)}</span>
+            </motion.button>
+
             {mode === AppMode.EDIT && (
               <motion.button 
                 whileHover={{ scale: 1.02 }}
@@ -710,7 +884,7 @@ const App: React.FC = () => {
                 className="px-5 py-2.5 md:px-8 md:py-3 rounded-2xl transition-all flex items-center gap-2 font-bold text-sm shadow-lg bg-blue-600 text-white hover:bg-blue-500"
               >
                 <Eye size={18} />
-                <span>إنهاء التعديل</span>
+                <span>{t('finishEditing', lang)}</span>
               </motion.button>
             )}
           </div>
@@ -725,10 +899,10 @@ const App: React.FC = () => {
               {/* Hero Section */}
               <section className="grid lg:grid-cols-2 gap-16 md:gap-24 items-center">
                 <div className="space-y-8 md:space-y-10 order-2 lg:order-1">
-                  <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
+                  <motion.div initial={{ opacity: 0, x: lang === 'ar' ? -30 : 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
                     <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full border-emerald-500/20 mb-8 bg-emerald-500/5">
                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                      <span className="text-[10px] md:text-xs text-emerald-400 font-black uppercase tracking-widest">متاح للاستشارات والنمو الاستراتيجي</span>
+                      <span className="text-[10px] md:text-xs text-emerald-400 font-black uppercase tracking-widest">{t('available', lang)}</span>
                     </div>
                     <h1 className="text-5xl sm:text-7xl md:text-8xl font-black leading-[1.1] mb-8 hero-title">
                       {profile.name ? (
@@ -737,13 +911,13 @@ const App: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <span className="text-slate-600">الاسم</span> <br />
+                          <span className="text-slate-600">{t('namePlaceholder', lang)}</span> <br />
                         </>
                       )}
-                      يصنع <span className="text-emerald-400">المستقبل</span>.
+                      {t('makesFuture', lang)} <span className="text-emerald-400">{t('future', lang)}</span>.
                     </h1>
-                    <p className="text-lg md:text-2xl text-slate-400 max-w-xl leading-relaxed font-medium">
-                      {profile.bio || "نبذة تعريفية..."}
+                    <p className="text-lg md:text-2xl max-w-xl leading-relaxed font-medium" style={{ color: curTheme.slate }}>
+                      {profile.bio || t('bioPlaceholder', lang)}
                     </p>
                   </motion.div>
 
@@ -753,9 +927,10 @@ const App: React.FC = () => {
                       target="_blank"
                       whileHover={{ y: -5, scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
-                      className="bg-white text-black px-10 py-5 rounded-[1.5rem] font-black text-lg md:text-xl shadow-2xl flex items-center gap-3 hover:bg-emerald-50 transition-all"
+                      className="px-10 py-5 rounded-[1.5rem] font-black text-lg md:text-xl shadow-2xl flex items-center gap-3 transition-all"
+                      style={{ backgroundColor: '#fff', color: '#000' }}
                     >
-                      تواصل الآن <Rocket size={22} className="text-emerald-600" />
+                      {t('contactNow', lang)} <Rocket size={22} className="text-emerald-600" />
                     </motion.a>
                     <div className="flex flex-wrap items-center gap-4">
                       {profile.social.whatsapp && (
@@ -809,12 +984,12 @@ const App: React.FC = () => {
               </section>
 
               {/* 3D Dynamic Gallery */}
-              <Gallery3D images={profile.galleryImages} isLite={isLiteExperience} />
+              <Gallery3D images={profile.galleryImages} isLite={isLiteExperience} lang={lang} />
 
               {/* Capability Matrix Section */}
               <section className="space-y-20">
                 <div className="flex flex-col items-center text-center gap-6">
-                  <h3 className="text-4xl md:text-6xl font-black tracking-tight">مصفوفة القدرات الاستراتيجية</h3>
+                  <h3 className="text-4xl md:text-6xl font-black tracking-tight">{t('strategicMatrix', lang)}</h3>
                   <div className="w-32 h-2 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full" />
                 </div>
                 
@@ -861,13 +1036,13 @@ const App: React.FC = () => {
                           <div className="flex justify-between items-start mb-6">
                             <div className="space-y-1">
                               <h4 className="font-black text-xl group-hover:text-emerald-400 transition-colors tracking-tight">{skill.name}</h4>
-                              <p className="text-xs text-slate-500 font-medium leading-relaxed">{skill.description}</p>
+                              <p className="text-xs font-medium leading-relaxed" style={{ color: curTheme.slate }}>{skill.description}</p>
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-md">{skill.category}</span>
                           </div>
                           <div className="space-y-3">
                             <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                              <span>الكفاءة الاستراتيجية</span>
+                              <span>{t('strategicEfficiency', lang)}</span>
                               <span>{skill.level}%</span>
                             </div>
                             <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
@@ -885,11 +1060,11 @@ const App: React.FC = () => {
               <section className="space-y-16">
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-10">
                   <div className="space-y-4">
-                    <h3 className="text-4xl md:text-5xl font-black">قصص النجاح الاستراتيجي</h3>
-                    <p className="text-slate-400 text-lg md:text-xl max-w-2xl">تحويل البيانات والرؤى المجردة إلى نتائج ملموسة وأرقام حقيقية تنبض بالنمو.</p>
+                    <h3 className="text-4xl md:text-5xl font-black">{t('successStories', lang)}</h3>
+                    <p className="text-lg md:text-xl max-w-2xl" style={{ color: curTheme.slate }}>{t('successDesc', lang)}</p>
                   </div>
                   <button className="text-emerald-400 font-black text-sm flex items-center gap-2 group border-b-2 border-transparent hover:border-emerald-500 transition-all pb-1 mb-2">
-                    تصفح الأرشيف الكامل <ChevronRight size={20} className="rotate-180 transition-transform group-hover:translate-x-[-4px]" />
+                    {t('browseArchive', lang)} <ChevronRight size={20} className="rotate-180 transition-transform group-hover:translate-x-[-4px]" />
                   </button>
                 </div>
 
@@ -920,7 +1095,7 @@ const App: React.FC = () => {
                             whileTap={{ scale: 0.98 }}
                             className="w-full py-4.5 rounded-2xl bg-white text-black font-black text-sm md:text-base flex items-center justify-center gap-3 hover:bg-emerald-50 transition-all shadow-xl"
                           >
-                            تحليل العائد الاستثماري <ArrowUpRight size={20} className="text-emerald-600" />
+                            {t('roiAnalysis', lang)} <ArrowUpRight size={20} className="text-emerald-600" />
                           </motion.a>
                         ) : (
                           <motion.button 
@@ -928,7 +1103,7 @@ const App: React.FC = () => {
                             whileTap={{ scale: 0.98 }}
                             className="w-full py-4.5 rounded-2xl bg-white text-black font-black text-sm md:text-base flex items-center justify-center gap-3 hover:bg-emerald-50 transition-all shadow-xl"
                           >
-                            تحليل العائد الاستثماري <ArrowUpRight size={20} className="text-emerald-600" />
+                            {t('roiAnalysis', lang)} <ArrowUpRight size={20} className="text-emerald-600" />
                           </motion.button>
                         )}
                       </div>
@@ -938,36 +1113,36 @@ const App: React.FC = () => {
               </section>
 
               {/* Roadmap Section */}
-              <Roadmap items={profile.roadmap} />
+              <Roadmap items={profile.roadmap} lang={lang} />
 
             </motion.div>
           ) : (
-            <motion.div key="edit" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-6xl mx-auto glass p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] space-y-12 mb-24 border-white/10 shadow-3xl">
+            <motion.div key="edit" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-6xl mx-auto glass p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] space-y-12 mb-24 shadow-3xl" style={{ border: `1px solid ${curTheme.border}` }}>
                <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/10 pb-8">
                   <div className="text-center md:text-right">
-                    <h2 className="text-4xl md:text-5xl font-black mb-2">غرفة القيادة</h2>
-                    <p className="text-slate-500 font-medium text-lg tracking-wide">التحكم الكامل في الهوية الرقمية والاستراتيجية.</p>
+                    <h2 className="text-4xl md:text-5xl font-black mb-2">{t('commandRoom', lang)}</h2>
+                    <p className="font-medium text-lg tracking-wide" style={{ color: curTheme.slate }}>{t('commandDesc', lang)}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => {
-                        if(confirm('هل أنت متأكد من إعادة تعيين جميع البيانات إلى القيم الافتراضية؟')) {
+                        if(confirm(t('resetConfirm', lang))) {
                           setProfile(INITIAL_DATA);
                         }
                       }}
                       className="px-6 py-3 glass rounded-2xl text-emerald-500 font-bold text-sm border-emerald-500/20 hover:bg-emerald-500/10"
                     >
-                      إعادة تعيين
+                      {t('resetData', lang)}
                     </button>
                     <button 
                       onClick={() => {
-                        if(confirm('هل أنت متأكد من مسح جميع البيانات؟')) {
+                        if(confirm(t('clearConfirm', lang))) {
                           setProfile({ ...INITIAL_DATA, name: '', title: '', bio: '', skills: [], projects: [], galleryImages: [], stats: [], roadmap: [] });
                         }
                       }}
                       className="px-6 py-3 glass rounded-2xl text-red-500 font-bold text-sm border-red-500/20 hover:bg-red-500/10"
                     >
-                      تصفير البيانات
+                      {t('clearData', lang)}
                     </button>
                     <div className="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-500 border border-blue-500/30">
                       <Settings size={28} className="animate-spin-slow" />
@@ -978,13 +1153,13 @@ const App: React.FC = () => {
                {/* Control Tabs */}
                <div className="flex flex-wrap gap-2 justify-center md:justify-start border-b border-white/5 pb-6">
                   {[
-                    { id: 'profile', label: 'الملف الشخصي', icon: Users },
-                    { id: 'skills', label: 'المهارات', icon: Zap },
-                    { id: 'projects', label: 'المشاريع', icon: Briefcase },
-                    { id: 'gallery', label: 'المعرض', icon: ImageIcon },
-                    { id: 'stats', label: 'الإحصائيات', icon: BarChart3 },
-                    { id: 'roadmap', label: 'خارطة الطريق', icon: Target },
-                    { id: 'social', label: 'التواصل', icon: LinkIcon },
+                    { id: 'profile', label: t('profileTab', lang), icon: Users },
+                    { id: 'skills', label: t('skillsTab', lang), icon: Zap },
+                    { id: 'projects', label: t('projectsTab', lang), icon: Briefcase },
+                    { id: 'gallery', label: t('galleryTab', lang), icon: ImageIcon },
+                    { id: 'stats', label: t('statsTab', lang), icon: BarChart3 },
+                    { id: 'roadmap', label: t('roadmapTab', lang), icon: Target },
+                    { id: 'social', label: t('socialTab', lang), icon: LinkIcon },
                   ].map(tab => (
                     <button 
                       key={tab.id}
@@ -1002,20 +1177,20 @@ const App: React.FC = () => {
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                      <div className="grid md:grid-cols-2 gap-10">
                         <div className="space-y-4">
-                          <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">الاسم المهني</label>
+                          <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">{t('profNameLabel', lang)}</label>
                           <input value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="w-full glass bg-white/5 rounded-2xl px-8 py-5 outline-none border border-white/10 focus:border-emerald-500 transition-all font-bold text-lg" />
                         </div>
                         <div className="space-y-4">
-                          <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">المسمى الوظيفي</label>
+                          <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">{t('jobTitleLabel', lang)}</label>
                           <input value={profile.title} onChange={e => setProfile({...profile, title: e.target.value})} className="w-full glass bg-white/5 rounded-2xl px-8 py-5 outline-none border border-white/10 focus:border-emerald-500 transition-all font-bold text-lg" />
                         </div>
                      </div>
                      <div className="space-y-4">
-                        <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">النبذة التعريفية</label>
+                        <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">{t('bioLabel', lang)}</label>
                         <textarea rows={4} value={profile.bio} onChange={e => setProfile({...profile, bio: e.target.value})} className="w-full glass bg-white/5 rounded-3xl px-8 py-6 outline-none border border-white/10 focus:border-emerald-500 transition-all text-lg font-medium leading-relaxed resize-none" />
                      </div>
                      <div className="space-y-4">
-                        <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">صورة البروفايل</label>
+                        <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">{t('profileImageLabel', lang)}</label>
                         <div className="flex items-center gap-4">
                           {profile.profileImage && (
                             <img 
@@ -1029,7 +1204,7 @@ const App: React.FC = () => {
                           )}
                           <label className="flex-1 cursor-pointer glass bg-white/5 hover:bg-white/10 rounded-2xl px-8 py-5 border border-white/10 focus-within:border-emerald-500 transition-all flex items-center justify-center gap-3">
                             <ImageIcon size={20} className="text-slate-400" />
-                            <span className="font-bold text-sm text-slate-300">اختر صورة من الجهاز</span>
+                            <span className="font-bold text-sm text-slate-300">{t('chooseImage', lang)}</span>
                             <input 
                               type="file" 
                               accept="image/*"
@@ -1050,7 +1225,7 @@ const App: React.FC = () => {
                         {profile.profileImage && (
                           <div className="grid grid-cols-2 gap-4 mt-2 p-4 glass bg-white/5 rounded-2xl border border-white/10">
                             <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">تحريك أفقي</label>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('horizontalMove', lang)}</label>
                               <input 
                                 type="range" min="0" max="100" 
                                 value={profile.imagePosition?.x ?? 50} 
@@ -1059,7 +1234,7 @@ const App: React.FC = () => {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">تحريك رأسي</label>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('verticalMove', lang)}</label>
                               <input 
                                 type="range" min="0" max="100" 
                                 value={profile.imagePosition?.y ?? 50} 
@@ -1071,7 +1246,7 @@ const App: React.FC = () => {
                         )}
                      </div>
                      <div className="space-y-4">
-                        <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">مستوى الجاهزية للذكاء الاصطناعي ({profile.aiReadinessScore}%)</label>
+                        <label className="text-xs font-black uppercase text-slate-500 tracking-[0.2em]">{t('aiReadiness', lang)} ({profile.aiReadinessScore}%)</label>
                         <input type="range" min="0" max="100" value={profile.aiReadinessScore} onChange={e => setProfile({...profile, aiReadinessScore: parseInt(e.target.value)})} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
                      </div>
                    </motion.div>
@@ -1080,8 +1255,8 @@ const App: React.FC = () => {
                  {editTab === 'skills' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                      <div className="flex justify-between items-center">
-                       <h3 className="text-xl font-black">إدارة المهارات</h3>
-                       <button onClick={addSkill} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ إضافة مهارة</button>
+                       <h3 className="text-xl font-black">{t('manageSkills', lang)}</h3>
+                       <button onClick={addSkill} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ {t('addSkill', lang)}</button>
                      </div>
                      <div className="grid gap-4">
                        {profile.skills.map(skill => (
@@ -1094,7 +1269,7 @@ const App: React.FC = () => {
                              <input type="range" min="0" max="100" value={skill.level} onChange={e => updateSkill(skill.id, {level: parseInt(e.target.value)})} className="flex-1 h-1 accent-emerald-500" />
                              <span className="text-xs font-mono w-8">{skill.level}%</span>
                            </div>
-                           <button onClick={() => { if(confirm('حذف المهارة؟')) deleteSkill(skill.id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><Trash2 size={18} /></button>
+                           <button onClick={() => { if(confirm(t('deleteConfirm', lang))) deleteSkill(skill.id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><Trash2 size={18} /></button>
                          </div>
                        ))}
                      </div>
@@ -1104,21 +1279,21 @@ const App: React.FC = () => {
                  {editTab === 'projects' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                      <div className="flex justify-between items-center">
-                       <h3 className="text-xl font-black">إدارة المشاريع</h3>
-                       <button onClick={addProject} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ إضافة مشروع</button>
+                       <h3 className="text-xl font-black">{t('manageProjects', lang)}</h3>
+                       <button onClick={addProject} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ {t('addProject', lang)}</button>
                      </div>
                      <div className="grid gap-6">
                        {profile.projects.map(proj => (
                          <div key={proj.id} className="glass p-8 rounded-[2.5rem] border-white/5 space-y-6 relative">
-                           <button onClick={() => { if(confirm('حذف المشروع؟')) deleteProject(proj.id); }} className="absolute top-6 left-6 text-red-500 hover:scale-110 transition-all"><Trash2 size={20} /></button>
+                           <button onClick={() => { if(confirm(t('deleteProjectConfirm', lang))) deleteProject(proj.id); }} className="absolute top-6 left-6 text-red-500 hover:scale-110 transition-all"><Trash2 size={20} /></button>
                            <div className="grid md:grid-cols-2 gap-6">
-                             <input value={proj.title} onChange={e => updateProject(proj.id, {title: e.target.value})} placeholder="عنوان المشروع" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 font-bold text-lg" />
-                             <input value={proj.impact} onChange={e => updateProject(proj.id, {impact: e.target.value})} placeholder="الأثر (مثال: نمو 20%)" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-emerald-400 font-bold" />
+                             <input value={proj.title} onChange={e => updateProject(proj.id, {title: e.target.value})} placeholder={t('projectTitle', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 font-bold text-lg" />
+                             <input value={proj.impact} onChange={e => updateProject(proj.id, {impact: e.target.value})} placeholder={t('projectImpact', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-emerald-400 font-bold" />
                            </div>
                            <div className="grid md:grid-cols-3 gap-6">
-                             <input value={proj.image} onChange={e => updateProject(proj.id, {image: e.target.value})} placeholder="رابط الصورة" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-xs font-mono" />
-                             <input value={proj.link || ''} onChange={e => updateProject(proj.id, {link: e.target.value})} placeholder="رابط المشروع" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-xs font-mono" />
-                             <input value={proj.tech.join(', ')} onChange={e => updateProject(proj.id, {tech: e.target.value.split(',').map(t => t.trim())})} placeholder="التقنيات (فاصلة)" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-sm" />
+                             <input value={proj.image} onChange={e => updateProject(proj.id, {image: e.target.value})} placeholder={t('imageUrl', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-xs font-mono" />
+                             <input value={proj.link || ''} onChange={e => updateProject(proj.id, {link: e.target.value})} placeholder={t('projectLink', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-xs font-mono" />
+                             <input value={proj.tech.join(', ')} onChange={e => updateProject(proj.id, {tech: e.target.value.split(',').map(t => t.trim())})} placeholder={t('techTags', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-sm" />
                            </div>
                          </div>
                        ))}
@@ -1129,13 +1304,13 @@ const App: React.FC = () => {
                  {editTab === 'gallery' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                      <div className="flex justify-between items-center">
-                       <h3 className="text-xl font-black">معرض الصور</h3>
-                       <button onClick={addGalleryImage} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ إضافة صورة</button>
+                       <h3 className="text-xl font-black">{t('galleryManage', lang)}</h3>
+                       <button onClick={addGalleryImage} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ {t('addImage', lang)}</button>
                      </div>
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                        {profile.galleryImages.map((img, i) => (
                          <div key={i} className="relative group aspect-square rounded-2xl overflow-hidden glass border-white/10">
-                           <img src={img} alt={`صورة معرض ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                           <img src={img} alt={`Gallery ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                            <button onClick={() => removeGalleryImage(i)} className="absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white"><Trash2 size={24} /></button>
                          </div>
                        ))}
@@ -1146,20 +1321,20 @@ const App: React.FC = () => {
                  {editTab === 'stats' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                      <div className="flex justify-between items-center">
-                       <h3 className="text-xl font-black">الإحصائيات الحيوية</h3>
-                       <button onClick={addStat} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ إضافة إحصائية</button>
+                       <h3 className="text-xl font-black">{t('manageStats', lang)}</h3>
+                       <button onClick={addStat} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ {t('addStat', lang)}</button>
                      </div>
                      <div className="grid gap-4">
                        {profile.stats.map(stat => (
                          <div key={stat.id} className="glass p-6 rounded-2xl border-white/5 grid md:grid-cols-5 gap-4 items-center">
-                           <input value={stat.label} onChange={e => updateStat(stat.id, {label: e.target.value})} placeholder="العنوان" className="bg-transparent border-b border-white/10 outline-none py-2 font-bold" />
-                           <input value={stat.value} onChange={e => updateStat(stat.id, {value: e.target.value})} placeholder="القيمة" className="bg-transparent border-b border-white/10 outline-none py-2 font-black text-emerald-400" />
-                           <input value={stat.sub} onChange={e => updateStat(stat.id, {sub: e.target.value})} placeholder="التفاصيل" className="bg-transparent border-b border-white/10 outline-none py-2 text-xs" />
+                           <input value={stat.label} onChange={e => updateStat(stat.id, {label: e.target.value})} placeholder={t('manageStats', lang)} className="bg-transparent border-b border-white/10 outline-none py-2 font-bold" />
+                           <input value={stat.value} onChange={e => updateStat(stat.id, {value: e.target.value})} placeholder={t('manageStats', lang)} className="bg-transparent border-b border-white/10 outline-none py-2 font-black text-emerald-400" />
+                           <input value={stat.sub} onChange={e => updateStat(stat.id, {sub: e.target.value})} placeholder={t('manageStats', lang)} className="bg-transparent border-b border-white/10 outline-none py-2 text-xs" />
                            <select value={stat.icon} onChange={e => updateStat(stat.id, {icon: e.target.value})} className="bg-slate-800 rounded-lg px-4 py-2 text-xs">
                              {Object.keys(IconMap).map(icon => <option key={icon} value={icon}>{icon}</option>)}
                            </select>
                            <div className="flex justify-end">
-                             <button onClick={() => { if(confirm('حذف الإحصائية؟')) deleteStat(stat.id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><Trash2 size={18} /></button>
+                             <button onClick={() => { if(confirm(t('deleteStatConfirm', lang))) deleteStat(stat.id); }} className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg"><Trash2 size={18} /></button>
                            </div>
                          </div>
                        ))}
@@ -1169,7 +1344,7 @@ const App: React.FC = () => {
 
                  {editTab === 'social' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-                     <h3 className="text-xl font-black">روابط التواصل الاجتماعي</h3>
+                     <h3 className="text-xl font-black">{t('socialLinks', lang)}</h3>
                      <div className="grid md:grid-cols-2 gap-8">
                        {[
                          { id: 'linkedin', label: 'LinkedIn', icon: Linkedin },
@@ -1195,23 +1370,23 @@ const App: React.FC = () => {
                  {editTab === 'roadmap' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                      <div className="flex justify-between items-center">
-                       <h3 className="text-xl font-black">خارطة الطريق</h3>
-                       <button onClick={addRoadmapItem} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ إضافة هدف</button>
+                       <h3 className="text-xl font-black">{t('manageRoadmap', lang)}</h3>
+                       <button onClick={addRoadmapItem} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ {t('addGoal', lang)}</button>
                      </div>
                      <div className="grid gap-6">
                        {profile.roadmap.map(item => (
                          <div key={item.id} className="glass p-8 rounded-[2.5rem] border-white/5 space-y-6 relative">
                            <button onClick={() => deleteRoadmapItem(item.id)} className="absolute top-6 left-6 text-red-500 hover:scale-110 transition-all"><Trash2 size={20} /></button>
                            <div className="grid md:grid-cols-3 gap-6">
-                             <input value={item.year} onChange={e => updateRoadmapItem(item.id, {year: e.target.value})} placeholder="السنة" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 font-bold text-lg" />
-                             <input value={item.title} onChange={e => updateRoadmapItem(item.id, {title: e.target.value})} placeholder="العنوان" className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 font-bold" />
+                             <input value={item.year} onChange={e => updateRoadmapItem(item.id, {year: e.target.value})} placeholder={t('yearPlaceholder', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 font-bold text-lg" />
+                             <input value={item.title} onChange={e => updateRoadmapItem(item.id, {title: e.target.value})} placeholder={t('titlePlaceholder2', lang)} className="bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 font-bold" />
                              <select value={item.status} onChange={e => updateRoadmapItem(item.id, {status: e.target.value as any})} className="bg-slate-800 rounded-lg px-4 py-2 text-xs">
-                               <option value="completed">مكتمل</option>
-                               <option value="current">قيد التنفيذ</option>
-                               <option value="upcoming">مخطط له</option>
+                               <option value="completed">{t('completed', lang)}</option>
+                               <option value="current">{t('inProgress', lang)}</option>
+                               <option value="upcoming">{t('planned', lang)}</option>
                              </select>
                            </div>
-                           <textarea rows={2} value={item.description} onChange={e => updateRoadmapItem(item.id, {description: e.target.value})} placeholder="الوصف" className="w-full bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-sm resize-none" />
+                           <textarea rows={2} value={item.description} onChange={e => updateRoadmapItem(item.id, {description: e.target.value})} placeholder={t('descPlaceholder', lang)} className="w-full bg-transparent border-b border-white/10 outline-none focus:border-emerald-500 py-2 text-sm resize-none" />
                          </div>
                        ))}
                      </div>
@@ -1236,8 +1411,8 @@ const App: React.FC = () => {
                 exit={{ scale: 0.9, opacity: 0 }}
                 className="glass p-6 md:p-8 rounded-3xl max-w-sm w-full border border-white/10 shadow-2xl"
               >
-                <h3 className="text-xl font-bold mb-4 text-center">غرفة التحكم</h3>
-                <p className="text-sm text-slate-400 mb-6 text-center">الرجاء إدخال الرقم السري للمتابعة</p>
+                <h3 className="text-xl font-bold mb-4 text-center">{t('controlRoom', lang)}</h3>
+                <p className="text-sm text-slate-400 mb-6 text-center">{t('enterPassword', lang)}</p>
                 
                 <input
                   type="password"
@@ -1250,7 +1425,7 @@ const App: React.FC = () => {
                     if (e.key === 'Enter') handleAuthSubmit();
                   }}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4 text-center text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="الرقم السري"
+                  placeholder={t('password', lang)}
                   autoFocus
                 />
                 
@@ -1263,13 +1438,13 @@ const App: React.FC = () => {
                     onClick={() => setShowAuthModal(false)}
                     className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors font-bold"
                   >
-                    إلغاء
+                    {t('cancel', lang)}
                   </button>
                   <button
                     onClick={handleAuthSubmit}
                     className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 transition-colors font-bold"
                   >
-                    دخول
+                    {t('login', lang)}
                   </button>
                 </div>
               </motion.div>
@@ -1281,13 +1456,13 @@ const App: React.FC = () => {
       <footer className="relative z-10 py-20 md:py-32 text-center border-t border-white/5 glass">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12">
           <div className="text-center md:text-right space-y-4">
-             <h5 className="text-3xl md:text-4xl font-black gradient-text tracking-tighter">{profile.name || "الاسم"}</h5>
-             <p className="text-slate-500 text-sm font-black uppercase tracking-[0.4em]">{profile.title || "المسمى الوظيفي"}</p>
+             <h5 className="text-3xl md:text-4xl font-black gradient-text tracking-tighter">{profile.name || t('namePlaceholder', lang)}</h5>
+             <p className="text-slate-500 text-sm font-black uppercase tracking-[0.4em]">{profile.title || t('titlePlaceholder', lang)}</p>
           </div>
           <div className="flex gap-8 items-center text-slate-600 text-sm font-bold">
-            <a href="#" className="hover:text-emerald-500 transition-colors">استراتيجيات</a>
-            <a href="#" className="hover:text-emerald-500 transition-colors">عن الشركة</a>
-            <a href="#" className="hover:text-emerald-500 transition-colors">تواصل</a>
+            <a href="#" className="hover:text-emerald-500 transition-colors">{t('strategies', lang)}</a>
+            <a href="#" className="hover:text-emerald-500 transition-colors">{t('about', lang)}</a>
+            <a href="#" className="hover:text-emerald-500 transition-colors">{t('contact', lang)}</a>
           </div>
           
           <div className="flex items-center gap-4">
@@ -1308,7 +1483,7 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <p className="text-slate-600 text-xs font-black uppercase tracking-widest">© {new Date().getFullYear()} {profile.name || "الاسم"}.</p>
+          <p className="text-slate-600 text-xs font-black uppercase tracking-widest">© {new Date().getFullYear()} {profile.name || t('namePlaceholder', lang)}.</p>
         </div>
       </footer>
     </div>
