@@ -104,7 +104,8 @@ const T: Record<string, Record<Lang, string>> = {
 };
 
 function t(key: string, lang: Lang): string {
-  return T[key]?.[lang] || key;
+  const translation = T[key];
+  return translation?.[lang] || translation?.ar || key;
 }
 
 // --- Theme CSS ---
