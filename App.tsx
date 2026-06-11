@@ -11,7 +11,8 @@ import { FaWhatsapp, FaLinkedin, FaGlobe, FaMobileAlt } from 'react-icons/fa';
 import { SiGmail } from 'react-icons/si';
 import { Skill, ProfileData, AppMode, Project, Stat } from './types';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { db, isFirebaseConfigured, storage } from './firebase';
 
 const SkillRadar = lazy(() => import('./SkillRadar'));
 
@@ -73,6 +74,10 @@ const T: Record<string, Record<Lang, string>> = {
   techTags: { ar: 'التقنيات (فاصلة)', en: 'Technologies (comma)' },
   galleryManage: { ar: 'معرض الصور', en: 'Image Gallery' },
   addImage: { ar: 'إضافة صورة', en: 'Add Image' },
+  uploadImage: { ar: 'رفع صورة من الجهاز', en: 'Upload from device' },
+  addImageUrl: { ar: 'إضافة رابط صورة', en: 'Add image URL' },
+  uploadingImage: { ar: 'جاري رفع الصورة...', en: 'Uploading image...' },
+  uploadFailed: { ar: 'تعذر رفع الصورة، جرّب صورة أصغر أو تأكد من قواعد Firebase Storage.', en: 'Image upload failed. Try a smaller image or check Firebase Storage rules.' },
   manageStats: { ar: 'الإحصائيات الحيوية', en: 'Live Stats' },
   addStat: { ar: 'إضافة إحصائية', en: 'Add Stat' },
   deleteStatConfirm: { ar: 'حذف الإحصائية؟', en: 'Delete stat?' },
@@ -583,6 +588,7 @@ const App: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [theme, setTheme] = useState<Theme>('dark');
   const [lang, setLang] = useState<Lang>('ar');
@@ -596,6 +602,61 @@ const App: React.FC = () => {
   const lastClickTime = useRef(0);
 
   const curTheme = THEMES[theme];
+
+  const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const uploadPortfolioImage = async (file: File, folder: 'profile' | 'gallery') => {
+    if (!storage) {
+      return readFileAsDataUrl(file);
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const imageRef = ref(storage, `portfolio/${folder}/${Date.now()}-${safeName}`);
+    const snapshot = await uploadBytes(imageRef, file, { contentType: file.type });
+    return getDownloadURL(snapshot.ref);
+  };
+
+  const handleProfileImageFile = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const imageUrl = await uploadPortfolioImage(file, 'profile');
+      setProfile(current => ({
+        ...current,
+        profileImage: imageUrl,
+        imagePosition: { x: 50, y: 50 }
+      }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'storage/portfolio/profile');
+      alert(t('uploadFailed', lang));
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleGalleryImageFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+
+    setIsUploadingImage(true);
+    try {
+      const imageUrls = await Promise.all(
+        Array.from(files).map(file => uploadPortfolioImage(file, 'gallery'))
+      );
+      setProfile(current => ({
+        ...current,
+        galleryImages: [...current.galleryImages, ...imageUrls]
+      }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'storage/portfolio/gallery');
+      alert(t('uploadFailed', lang));
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -744,7 +805,7 @@ const App: React.FC = () => {
     setProfile({ ...profile, stats: profile.stats.filter(s => s.id !== id) });
   };
 
-  const addGalleryImage = () => {
+  const addGalleryImageUrl = () => {
     const url = prompt(t('addImagePrompt', lang));
     if (url) {
       setProfile({ ...profile, galleryImages: [...profile.galleryImages, url] });
@@ -1205,20 +1266,18 @@ const App: React.FC = () => {
                           )}
                           <label className="flex-1 cursor-pointer glass bg-white/5 hover:bg-white/10 rounded-2xl px-8 py-5 border border-white/10 focus-within:border-emerald-500 transition-all flex items-center justify-center gap-3">
                             <ImageIcon size={20} className="text-slate-400" />
-                            <span className="font-bold text-sm text-slate-300">{t('chooseImage', lang)}</span>
+                            <span className="font-bold text-sm text-slate-300">{isUploadingImage ? t('uploadingImage', lang) : t('chooseImage', lang)}</span>
                             <input 
                               type="file" 
                               accept="image/*"
                               className="hidden"
+                              disabled={isUploadingImage}
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    setProfile({...profile, profileImage: reader.result as string, imagePosition: { x: 50, y: 50 }});
-                                  };
-                                  reader.readAsDataURL(file);
+                                  void handleProfileImageFile(file);
                                 }
+                                e.target.value = '';
                               }} 
                             />
                           </label>
@@ -1304,9 +1363,25 @@ const App: React.FC = () => {
 
                  {editTab === 'gallery' && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-                     <div className="flex justify-between items-center">
+                     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                        <h3 className="text-xl font-black">{t('galleryManage', lang)}</h3>
-                       <button onClick={addGalleryImage} className="px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold">+ {t('addImage', lang)}</button>
+                       <div className="flex flex-wrap gap-3">
+                         <label className={`px-6 py-2 bg-emerald-600 rounded-xl text-sm font-bold cursor-pointer ${isUploadingImage ? 'opacity-60 pointer-events-none' : ''}`}>
+                           + {isUploadingImage ? t('uploadingImage', lang) : t('uploadImage', lang)}
+                           <input
+                             type="file"
+                             accept="image/*"
+                             multiple
+                             className="hidden"
+                             disabled={isUploadingImage}
+                             onChange={(e) => {
+                               void handleGalleryImageFiles(e.target.files);
+                               e.target.value = '';
+                             }}
+                           />
+                         </label>
+                         <button onClick={addGalleryImageUrl} className="px-6 py-2 bg-slate-700 rounded-xl text-sm font-bold">+ {t('addImageUrl', lang)}</button>
+                       </div>
                      </div>
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                        {profile.galleryImages.map((img, i) => (
