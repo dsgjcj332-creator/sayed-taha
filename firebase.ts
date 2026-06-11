@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Use Vite environment variables (prefixed with VITE_) so the build on Vercel
 // doesn't rely on a local JSON file that may be gitignored.
@@ -27,4 +28,7 @@ export const isFirebaseConfigured = Boolean(
 );
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = firebaseConfig.firestoreDatabaseId
+	? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+	: getFirestore(app);
+export const storage = isFirebaseConfigured && firebaseConfig.storageBucket ? getStorage(app) : null;
